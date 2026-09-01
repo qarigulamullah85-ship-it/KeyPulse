@@ -1,0 +1,35 @@
+{
+  "projectInfo": {
+    "name": "TypingClub Clone",
+    "description": "Typing application with user progress tracking"
+  },
+  "schema": {
+    "users": {
+      "type": "collection",
+      "description": "Stores user typing statistics and lesson completion history.",
+      "securityRules": {
+        "read": "User must be authenticated and their UID must match the document ID.",
+        "write": "User must be authenticated and their UID must match the document ID."
+      },
+      "documentId": "User UID from Firebase Auth",
+      "fields": {
+        "completedLessons": {
+          "type": "array (number)",
+          "description": "List of completed lesson IDs"
+        },
+        "averageWpm": {
+          "type": "number",
+          "description": "Overall average WPM"
+        },
+        "averageAccuracy": {
+          "type": "number",
+          "description": "Overall average accuracy"
+        },
+        "history": {
+          "type": "array (map)",
+          "description": "History of lesson attempts"
+        }
+      }
+    }
+  }
+}

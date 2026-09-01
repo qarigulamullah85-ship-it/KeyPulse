@@ -1,0 +1,6 @@
+{
+  "name": "KeyPulse",
+  "description": "An interactive typing application with games and progress tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
