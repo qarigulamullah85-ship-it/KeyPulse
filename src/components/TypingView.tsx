@@ -537,10 +537,10 @@ export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewPro
                   let earnedStars = 1;
                   const w = results?.wpm || 0;
                   const a = results?.accuracy || 0;
-                  if (a >= 98 && w >= 30) earnedStars = 5;
-                  else if (a >= 95 && w >= 20) earnedStars = 4;
-                  else if (a >= 90) earnedStars = 3;
-                  else if (a >= 80) earnedStars = 2;
+                  if (a >= 90) earnedStars = 5;
+                  else if (a >= 75) earnedStars = 4;
+                  else if (a >= 60) earnedStars = 3;
+                  else if (a >= 40) earnedStars = 2;
                   
                   // Arch calculation
                   const translateY = starIndex === 3 ? '0px' : (starIndex === 2 || starIndex === 4) ? '12px' : '32px';
