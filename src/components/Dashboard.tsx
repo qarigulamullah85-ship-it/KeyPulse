@@ -29,6 +29,7 @@ const getLessonIcon = (id: number) => {
 export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<'home' | 'stats' | 'badges' | 'games'>('home');
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [unlockConfirmLesson, setUnlockConfirmLesson] = useState<Lesson | null>(null);
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   
@@ -158,10 +159,14 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
                         transition={{ delay: Math.min(index * 0.02, 0.4) }}
                         key={lesson.id}
                         onClick={() => {
-                          if (!isLocked) onSelectLesson(lesson);
+                          if (isLocked) {
+                            setUnlockConfirmLesson(lesson);
+                          } else {
+                            onSelectLesson(lesson);
+                          }
                         }}
                         className={`relative flex flex-col bg-white dark:bg-gray-800 rounded-xl transition-all aspect-square overflow-hidden group ${
-                          isLocked ? 'cursor-not-allowed opacity-60 border border-gray-100 dark:border-gray-700' : 'cursor-pointer hover:-translate-y-1 hover:shadow-md'
+                          isLocked ? 'cursor-pointer opacity-60 border border-gray-100 dark:border-gray-700 hover:opacity-80' : 'cursor-pointer hover:-translate-y-1 hover:shadow-md'
                         } ${
                           isNext ? 'border-2 border-blue-500 shadow-lg scale-105 z-20 ring-4 ring-blue-50 dark:ring-blue-900/20' : 'border border-gray-200 dark:border-gray-700 shadow-sm'
                         }`}
@@ -347,10 +352,14 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
                         transition={{ delay: Math.min(index * 0.02, 0.4) }}
                         key={lesson.id}
                         onClick={() => {
-                          if (!isLocked) onSelectLesson(lesson);
+                          if (isLocked) {
+                            setUnlockConfirmLesson(lesson);
+                          } else {
+                            onSelectLesson(lesson);
+                          }
                         }}
                         className={`relative flex flex-col bg-white dark:bg-gray-800 rounded-xl transition-all aspect-square overflow-hidden group ${
-                          isLocked ? 'cursor-not-allowed opacity-60 border border-gray-100 dark:border-gray-700' : 'cursor-pointer hover:-translate-y-1 hover:shadow-md border border-emerald-100 dark:border-emerald-900/50 shadow-sm hover:border-emerald-300 dark:hover:border-emerald-700'
+                          isLocked ? 'cursor-pointer opacity-60 border border-gray-100 dark:border-gray-700 hover:opacity-80' : 'cursor-pointer hover:-translate-y-1 hover:shadow-md border border-emerald-100 dark:border-emerald-900/50 shadow-sm hover:border-emerald-300 dark:hover:border-emerald-700'
                         }`}
                       >
                         {/* Status Indicator Bar */}
@@ -404,6 +413,51 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
       </div>
+
+      {/* Unlock Confirmation Modal */}
+      <AnimatePresence>
+        {unlockConfirmLesson && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-sm w-full p-6 text-center border border-gray-100 dark:border-gray-700"
+            >
+              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Are you sure?</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                I highly recommend going through every lesson and not jumping ahead.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setUnlockConfirmLesson(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    const lesson = unlockConfirmLesson;
+                    setUnlockConfirmLesson(null);
+                    onSelectLesson(lesson);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors shadow-sm"
+                >
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

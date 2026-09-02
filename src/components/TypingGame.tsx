@@ -8,6 +8,7 @@ interface TypingGameProps {
   lesson: Lesson;
   onComplete: (wpm: number, accuracy: number) => void;
   onBack: () => void;
+  onNext?: () => void;
 }
 
 interface FallingWord {
@@ -18,12 +19,14 @@ interface FallingWord {
   speed: number;
 }
 
-export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
+export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGameProps) {
   const { t } = useLanguage();
-  const [words, setWords] = useState<FallingWord[]>([]);
+  const [words, setWordsState] = useState<FallingWord[]>([]);
+  const wordsRef = useRef<FallingWord[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const livesRef = useRef(3);
   const [status, setStatus] = useState<'playing' | 'gameover' | 'victory'>('playing');
   const [startTime] = useState(Date.now());
   const [keystrokes, setKeystrokes] = useState(0);
@@ -33,59 +36,97 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
   const requestRef = useRef<number>();
   const lastSpawnTime = useRef<number>(Date.now());
   const wordsToSpawn = useRef<string[]>(lesson.content.split(' ').filter(w => w.length > 0));
+
+  const setWords = (newWords: FallingWord[]) => {
+    wordsRef.current = newWords;
+    setWordsState(newWords);
+  };
   
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (status !== 'playing' && e.key === 'Enter') {
+        if (onNext) {
+          onNext();
+        } else {
+          onBack();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [status, onNext, onBack]);
+
+  const finishGame = useCallback((won: boolean) => {
+    const timeMs = Date.now() - startTime;
+    const timeMin = timeMs / 60000;
+    const wpm = timeMin > 0 ? Math.round((correctKeystrokes / 5) / timeMin) : 0;
+    const accuracy = keystrokes > 0 ? Math.round((correctKeystrokes / keystrokes) * 100) : 0;
+    onComplete(won ? wpm || 20 : 0, won ? accuracy || 90 : 0);
+  }, [startTime, correctKeystrokes, keystrokes, onComplete]);
+
   // Game Loop
   const updateGame = useCallback(() => {
     if (status !== 'playing') return;
 
     const now = Date.now();
+    const isBalloon = lesson.gameType === 'balloon';
     
-    // Spawn new word every 2 seconds if we have words left and less than 5 on screen
-    if (now - lastSpawnTime.current > 2000 && words.length < 5 && wordsToSpawn.current.length > 0) {
+    let currentWords = [...wordsRef.current];
+    let didSpawn = false;
+
+    // Spawn new word
+    if (now - lastSpawnTime.current > 2000 && currentWords.length < 5 && wordsToSpawn.current.length > 0) {
       const text = wordsToSpawn.current.shift()!;
       const newWord: FallingWord = {
         id: Math.random(),
         text,
-        x: Math.random() * 80 + 10, // 10% to 90% width
-        y: -10, // Start slightly above
-        speed: 0.1 + Math.random() * 0.1 // Random speed
+        x: Math.random() * 80 + 10,
+        y: isBalloon ? 110 : -10,
+        speed: (0.1 + Math.random() * 0.1) * (isBalloon ? -1 : 1)
       };
-      setWords(prev => [...prev, newWord]);
+      currentWords.push(newWord);
       lastSpawnTime.current = now;
+      didSpawn = true;
     }
 
     // Check win condition
-    if (wordsToSpawn.current.length === 0 && words.length === 0) {
+    if (wordsToSpawn.current.length === 0 && currentWords.length === 0) {
       setStatus('victory');
       finishGame(true);
       return;
     }
 
-    setWords(prev => {
-      let lostLife = false;
-      const nextWords = prev.map(w => ({ ...w, y: w.y + w.speed })).filter(w => {
+    let lostLife = false;
+    currentWords = currentWords.map(w => ({ ...w, y: w.y + w.speed })).filter(w => {
+      if (isBalloon) {
+        if (w.y < -10) {
+          lostLife = true;
+          return false;
+        }
+      } else {
         if (w.y > 100) {
           lostLife = true;
           return false;
         }
-        return true;
-      });
-
-      if (lostLife) {
-        setLives(l => {
-          const newLives = l - 1;
-          if (newLives <= 0) {
-            setStatus('gameover');
-            finishGame(false);
-          }
-          return newLives;
-        });
       }
-      return nextWords;
+      return true;
     });
 
+    if (lostLife) {
+      livesRef.current -= 1;
+      setLives(livesRef.current);
+      if (livesRef.current <= 0) {
+        setStatus('gameover');
+        finishGame(false);
+      }
+    }
+
+    // Always update words ref, but we could throttle react state updates if it causes performance issues.
+    // For now, updating state every frame is what it was doing before.
+    setWords(currentWords);
+
     requestRef.current = requestAnimationFrame(updateGame);
-  }, [status, words.length]);
+  }, [status, lesson.gameType, finishGame]);
 
   useEffect(() => {
     if (status === 'playing') {
@@ -95,15 +136,6 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, [updateGame, status]);
-
-  const finishGame = (won: boolean) => {
-    const timeMs = Date.now() - startTime;
-    const timeMin = timeMs / 60000;
-    // Calculate fake WPM/accuracy based on game performance to fit stats
-    const wpm = timeMin > 0 ? Math.round((correctKeystrokes / 5) / timeMin) : 0;
-    const accuracy = keystrokes > 0 ? Math.round((correctKeystrokes / keystrokes) * 100) : 0;
-    onComplete(won ? wpm || 20 : 0, won ? accuracy || 90 : 0);
-  };
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -117,19 +149,34 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.1);
+      
+      if (lesson.gameType === 'balloon') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } else {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
 
       setCorrectKeystrokes(c => c + val.length);
       setScore(s => s + val.length * 10);
-      setWords(prev => prev.filter((_, i) => i !== matchedWordIndex));
+      
+      const newWords = wordsRef.current.filter((_, i) => i !== matchedWordIndex);
+      setWords(newWords);
       setInputValue('');
     }
   };
@@ -154,7 +201,10 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
       </div>
 
       {/* Game Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
+        {lesson.gameType === 'balloon' && (
+          <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-rose-500/50 to-transparent z-10 pointer-events-none" />
+        )}
         <AnimatePresence>
           {words.map(w => (
             <motion.div
@@ -163,24 +213,44 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
               animate={{ opacity: 1, scale: 1, y: `${w.y}vh`, x: `${w.x}vw` }}
               exit={{ opacity: 0, scale: 1.5 }}
               transition={{ type: 'tween', duration: 0 }} // Duration 0 because we handle animation loop
-              className="absolute top-0 left-0 text-2xl font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2 rounded-lg shadow-md dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] whitespace-pre transform -translate-x-1/2 border border-slate-200 dark:border-transparent"
+              className={`absolute top-0 left-0 text-2xl font-mono font-bold whitespace-pre transform -translate-x-1/2 flex flex-col items-center justify-center ${lesson.gameType === 'balloon' ? '' : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2 rounded-lg shadow-md dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] border border-slate-200 dark:border-transparent'}`}
               style={{ top: `${w.y}%`, left: `${w.x}%` }}
             >
-              {/* Highlight typed portion if it matches start of word */}
-              {w.text.startsWith(inputValue.trim()) && inputValue.trim().length > 0 ? (
+              {lesson.gameType === 'balloon' && (
+                <div className="relative w-24 h-28 bg-rose-500 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] shadow-inner mb-1 flex items-center justify-center before:content-[''] before:absolute before:bottom-[-8px] before:w-0 before:h-0 before:border-l-[6px] before:border-r-[6px] before:border-b-[10px] before:border-transparent before:border-b-rose-600 after:content-[''] after:absolute after:bottom-[-40px] after:w-0.5 after:h-8 after:bg-gray-300">
+                  <div className="absolute top-4 right-4 w-4 h-6 bg-white/30 rounded-full rotate-45 blur-[1px]"></div>
+                  <div className="z-10 text-white font-black text-xl drop-shadow-md">
+                    {/* Highlight typed portion if it matches start of word */}
+                    {w.text.startsWith(inputValue.trim()) && inputValue.trim().length > 0 ? (
+                      <>
+                        <span className="text-rose-200">{inputValue.trim()}</span>
+                        <span>{w.text.slice(inputValue.trim().length)}</span>
+                      </>
+                    ) : (
+                      w.text
+                    )}
+                  </div>
+                </div>
+              )}
+              {lesson.gameType !== 'balloon' && (
                 <>
-                  <span className="text-blue-600">{inputValue.trim()}</span>
-                  <span>{w.text.slice(inputValue.trim().length)}</span>
+                  {/* Highlight typed portion if it matches start of word */}
+                  {w.text.startsWith(inputValue.trim()) && inputValue.trim().length > 0 ? (
+                    <>
+                      <span className="text-blue-600">{inputValue.trim()}</span>
+                      <span>{w.text.slice(inputValue.trim().length)}</span>
+                    </>
+                  ) : (
+                    w.text
+                  )}
                 </>
-              ) : (
-                w.text
               )}
             </motion.div>
           ))}
         </AnimatePresence>
         
         {/* Ground */}
-        <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-t from-rose-500/50 to-transparent" />
+        <div className={`absolute bottom-0 left-0 w-full h-2 ${lesson.gameType === 'balloon' ? 'bg-gradient-to-t from-sky-500/50 to-transparent' : 'bg-gradient-to-t from-rose-500/50 to-transparent'}`} />
       </div>
 
       {/* Input Area */}
@@ -220,10 +290,11 @@ export function TypingGame({ lesson, onComplete, onBack }: TypingGameProps) {
               
               <div className="flex gap-4">
                 <button
-                  onClick={onBack}
-                  className="flex-1 py-4 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-xl font-bold transition-colors"
+                  onClick={onNext ? onNext : onBack}
+                  className="flex-1 py-4 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
                 >
-                  {t('continue')}
+                  {onNext ? 'Next Lesson' : t('continue')}
+                  <span className="text-xs bg-slate-300 dark:bg-slate-600 px-2 py-1 rounded opacity-70">↵ Enter</span>
                 </button>
               </div>
             </motion.div>

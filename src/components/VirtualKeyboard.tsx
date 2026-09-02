@@ -9,37 +9,37 @@ interface VirtualKeyboardProps {
 
 const keyboardLayout = [
   [
-    { char: '`', width: 'w-10' }, { char: '1', width: 'w-10' }, { char: '2', width: 'w-10' }, 
-    { char: '3', width: 'w-10' }, { char: '4', width: 'w-10' }, { char: '5', width: 'w-10' }, 
-    { char: '6', width: 'w-10' }, { char: '7', width: 'w-10' }, { char: '8', width: 'w-10' }, 
-    { char: '9', width: 'w-10' }, { char: '0', width: 'w-10' }, { char: '-', width: 'w-10' }, 
-    { char: '=', width: 'w-10' }, { char: 'backspace', width: 'w-20', label: 'backspace' }
+    { char: '`', span: 4 }, { char: '1', span: 4 }, { char: '2', span: 4 }, 
+    { char: '3', span: 4 }, { char: '4', span: 4 }, { char: '5', span: 4 }, 
+    { char: '6', span: 4 }, { char: '7', span: 4 }, { char: '8', span: 4 }, 
+    { char: '9', span: 4 }, { char: '0', span: 4 }, { char: '-', span: 4 }, 
+    { char: '=', span: 4 }, { char: 'backspace', span: 8, label: 'backspace' }
   ],
   [
-    { char: 'tab', width: 'w-16', label: 'tab' }, { char: 'q', width: 'w-10' }, { char: 'w', width: 'w-10' }, 
-    { char: 'e', width: 'w-10' }, { char: 'r', width: 'w-10' }, { char: 't', width: 'w-10' }, 
-    { char: 'y', width: 'w-10' }, { char: 'u', width: 'w-10' }, { char: 'i', width: 'w-10' }, 
-    { char: 'o', width: 'w-10' }, { char: 'p', width: 'w-10' }, { char: '[', width: 'w-10' }, 
-    { char: ']', width: 'w-10' }, { char: '\\', width: 'w-[52px]' }
+    { char: 'tab', span: 6, label: 'tab' }, { char: 'q', span: 4 }, { char: 'w', span: 4 }, 
+    { char: 'e', span: 4 }, { char: 'r', span: 4 }, { char: 't', span: 4 }, 
+    { char: 'y', span: 4 }, { char: 'u', span: 4 }, { char: 'i', span: 4 }, 
+    { char: 'o', span: 4 }, { char: 'p', span: 4 }, { char: '[', span: 4 }, 
+    { char: ']', span: 4 }, { char: '\\', span: 6 }
   ],
   [
-    { char: 'caps', width: 'w-20', label: 'caps lock' }, { char: 'a', width: 'w-10' }, { char: 's', width: 'w-10' }, 
-    { char: 'd', width: 'w-10' }, { char: 'f', width: 'w-10' }, { char: 'g', width: 'w-10' }, 
-    { char: 'h', width: 'w-10' }, { char: 'j', width: 'w-10' }, { char: 'k', width: 'w-10' }, 
-    { char: 'l', width: 'w-10' }, { char: ';', width: 'w-10' }, { char: "'", width: 'w-10' }, 
-    { char: 'enter', width: 'w-[72px]', label: 'enter' }
+    { char: 'caps', span: 7, label: 'caps' }, { char: 'a', span: 4 }, { char: 's', span: 4 }, 
+    { char: 'd', span: 4 }, { char: 'f', span: 4 }, { char: 'g', span: 4 }, 
+    { char: 'h', span: 4 }, { char: 'j', span: 4 }, { char: 'k', span: 4 }, 
+    { char: 'l', span: 4 }, { char: ';', span: 4 }, { char: "'", span: 4 }, 
+    { char: 'enter', span: 9, label: 'enter' }
   ],
   [
-    { char: 'shift1', width: 'w-[104px]', label: 'shift' }, { char: 'z', width: 'w-10' }, { char: 'x', width: 'w-10' }, 
-    { char: 'c', width: 'w-10' }, { char: 'v', width: 'w-10' }, { char: 'b', width: 'w-10' }, 
-    { char: 'n', width: 'w-10' }, { char: 'm', width: 'w-10' }, { char: ',', width: 'w-10' }, 
-    { char: '.', width: 'w-10' }, { char: '/', width: 'w-10' }, { char: 'shift2', width: 'w-24', label: 'shift' }
+    { char: 'shift1', span: 9, label: 'shift' }, { char: 'z', span: 4 }, { char: 'x', span: 4 }, 
+    { char: 'c', span: 4 }, { char: 'v', span: 4 }, { char: 'b', span: 4 }, 
+    { char: 'n', span: 4 }, { char: 'm', span: 4 }, { char: ',', span: 4 }, 
+    { char: '.', span: 4 }, { char: '/', span: 4 }, { char: 'shift2', span: 11, label: 'shift' }
   ],
   [
-    { char: 'ctrl1', width: 'w-12', label: 'control' }, { char: 'opt1', width: 'w-12', label: 'option' }, 
-    { char: 'cmd1', width: 'w-12', label: 'command' }, { char: ' ', width: 'w-[320px]', label: 'space' }, 
-    { char: 'cmd2', width: 'w-12', label: 'command' }, { char: 'opt2', width: 'w-12', label: 'option' }, 
-    { char: 'ctrl2', width: 'w-12', label: 'control' }
+    { char: 'ctrl1', span: 5, label: 'ctrl' }, { char: 'win1', span: 5, label: 'win' }, 
+    { char: 'alt1', span: 5, label: 'alt' }, { char: ' ', span: 25, label: 'space' }, 
+    { char: 'alt2', span: 5, label: 'alt' }, { char: 'win2', span: 5, label: 'win' }, 
+    { char: 'menu', span: 5, label: 'menu' }, { char: 'ctrl2', span: 5, label: 'ctrl' }
   ]
 ];
 
@@ -63,22 +63,22 @@ export function VirtualKeyboard({ activeChar, styleName = 'standard' }: VirtualK
   const normalizedChar = activeChar?.toLowerCase() || '';
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-1.5 p-4 rounded-xl items-center pointer-events-none select-none relative z-10">
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-1.5 p-4 rounded-xl pointer-events-none select-none relative z-10">
       {keyboardLayout.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex gap-1.5 justify-center w-full">
-          {row.map((key) => {
+        <div key={rowIndex} className="grid gap-1.5 w-full" style={{ gridTemplateColumns: 'repeat(60, minmax(0, 1fr))' }}>
+          {row.map((key, i) => {
             const isActive = key.char === normalizedChar || (key.char === ' ' && normalizedChar === ' ');
             
             let keyStyle = '';
             
             if (styleName === 'standard') {
               keyStyle = isActive 
-                ? 'bg-[#5b95ff] border-[#5b95ff] text-white shadow-[0_0_15px_rgba(91,149,255,0.4)] scale-105 z-10' 
-                : 'bg-transparent border-[#4d4d4d] text-[#6b6b6b] border';
+                ? 'bg-[#5b95ff] border-[#5b95ff] text-white shadow-[0_0_15px_rgba(91,149,255,0.4)] scale-105 z-10 border-b-0 translate-y-[2px]' 
+                : 'bg-transparent border-[#4d4d4d] text-[#6b6b6b] border border-b-[3px]';
             } else if (styleName === 'glass') {
               keyStyle = isActive
-                ? 'bg-white/40 border-white/50 text-white backdrop-blur-md shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105 z-10 border'
-                : 'bg-white/5 border-white/10 text-white/50 backdrop-blur-sm border';
+                ? 'bg-white/40 border-white/50 text-white backdrop-blur-md shadow-[0_0_20px_rgba(255,255,255,0.4)] scale-105 z-10 border border-b-0 translate-y-[2px]'
+                : 'bg-white/5 border-white/10 text-white/50 backdrop-blur-sm border border-b-[3px]';
             } else if (styleName === 'modern') {
               keyStyle = isActive
                 ? 'bg-blue-500 text-white shadow-lg scale-105 z-10 rounded-lg border-none'
@@ -93,14 +93,15 @@ export function VirtualKeyboard({ activeChar, styleName = 'standard' }: VirtualK
             
             return (
               <div 
-                key={key.char} 
+                key={i} 
                 className={`
-                  ${key.width} h-12 flex items-center justify-center rounded-[4px]
+                  h-12 sm:h-14 flex items-center justify-center rounded-[4px]
                   transition-all duration-75
                   ${keyStyle}
                 `}
+                style={{ gridColumn: `span ${key.span}` }}
               >
-                <span className="text-sm font-medium">{key.label || key.char}</span>
+                <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">{key.label || key.char}</span>
               </div>
             );
           })}

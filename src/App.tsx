@@ -10,7 +10,7 @@ import { TypingView } from './components/TypingView';
 import { TypingGame } from './components/TypingGame';
 import { LessonCreator } from './components/LessonCreator';
 import { Lesson, UserStats, LessonResult } from './types';
-import { loadProgress, saveProgress } from './data';
+import { loadProgress, saveProgress, COURSES } from './data';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -131,6 +131,16 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            onNext={() => {
+              // Try to find the next lesson in COURSES
+              const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
+              if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
+                setActiveLesson(COURSES[currentIndex + 1]);
+              } else {
+                setActiveLesson(null);
+                setView('dashboard');
+              }
+            }}
           />
         )}
 
@@ -141,6 +151,15 @@ export default function App() {
             onBack={() => {
               setActiveLesson(null);
               setView('dashboard');
+            }}
+            onNext={() => {
+              const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
+              if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
+                setActiveLesson(COURSES[currentIndex + 1]);
+              } else {
+                setActiveLesson(null);
+                setView('dashboard');
+              }
             }}
           />
         )}

@@ -5,7 +5,7 @@ export interface Lesson {
   content: string;
   difficulty: 'easy' | 'medium' | 'hard';
   type: 'course' | 'custom';
-  gameType?: 'falling-words';
+  gameType?: 'falling-words' | 'balloon';
 }
 
 export interface LessonResult {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lesson } from '../types';
 import { useTyping } from '../hooks/useTyping';
@@ -11,18 +11,22 @@ interface TypingViewProps {
   lesson: Lesson;
   onComplete: (wpm: number, accuracy: number) => void;
   onBack: () => void;
+  onNext?: () => void;
 }
 
-export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
+export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewProps) {
   const { t } = useLanguage();
   const [results, setResults] = useState<{wpm: number, accuracy: number, durationSec: number, score: number} | null>(null);
   
   const [showKeyboard, setShowKeyboard] = useState(true);
   const [showHands, setShowHands] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showKeyboardSettings, setShowKeyboardSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [kbStyle, setKbStyle] = useState<KeyboardStyle>('standard');
+  const [soundProfile, setSoundProfile] = useState<'mechanical' | 'typewriter' | 'pop' | 'clack' | 'custom' | 'none'>('pop');
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const customAudioBufferRef = useRef<AudioBuffer | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
@@ -33,8 +37,26 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
     }
   };
 
+  const handleCustomAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      initAudio();
+      const arrayBuffer = await file.arrayBuffer();
+      if (audioCtxRef.current) {
+        const audioBuffer = await audioCtxRef.current.decodeAudioData(arrayBuffer);
+        customAudioBufferRef.current = audioBuffer;
+        setSoundProfile('custom');
+      }
+    } catch (err) {
+      console.error("Failed to decode audio", err);
+      alert("Could not load audio file. Please try another standard mp3 or wav file.");
+    }
+  };
+
   const playSound = useCallback((isCorrect: boolean) => {
-    if (!soundEnabled) return;
+    if (soundProfile === 'none') return;
     try {
       initAudio();
       const ctx = audioCtxRef.current;
@@ -43,27 +65,98 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
+      
+      const t = ctx.currentTime;
 
-      if (isCorrect) {
-        // Authentic mechanical keyboard switch click + bottom out thock
-        
-        // Thock (low frequency transient)
+      if (!isCorrect) {
+        // Error sound (dull thud)
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, t);
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.1);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.4, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.1);
+        return;
+      }
+
+      if (soundProfile === 'custom' && customAudioBufferRef.current) {
+        const source = ctx.createBufferSource();
+        source.buffer = customAudioBufferRef.current;
+        const gainNode = ctx.createGain();
+        // Envelope to prevent clipping, and keep it short for fast typing
+        gainNode.gain.setValueAtTime(0.8, t);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        source.start(t);
+        source.stop(t + 0.15);
+      } else if (soundProfile === 'pop') {
+        // Snappy pop (most popular modern typing sound)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, t);
+        osc.frequency.exponentialRampToValueAtTime(100, t + 0.015);
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.015);
+      } else if (soundProfile === 'clack') {
+        // Sharp, plastic bottom-out (Clack)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1000, t);
+        osc.frequency.exponentialRampToValueAtTime(300, t + 0.02);
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.02);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.02);
+
+        // white noise snap
+        const bufferSize = ctx.sampleRate * 0.02;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 3000;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.3, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.02);
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(t);
+      } else if (soundProfile === 'mechanical') {
+        // 1. High frequency snap (switch click)
         const osc = ctx.createOscillator();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.05);
+        osc.frequency.setValueAtTime(1200, t);
+        osc.frequency.exponentialRampToValueAtTime(200, t + 0.02);
+        
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.5, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.02);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.02);
 
-        const oscGain = ctx.createGain();
-        oscGain.gain.setValueAtTime(0.4, ctx.currentTime);
-        oscGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-
-        osc.connect(oscGain);
-        oscGain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.05);
-
-        // Click (high frequency noise)
-        const bufferSize = ctx.sampleRate * 0.04; // 40ms
+        // 2. White noise for the clack (bottom out)
+        const bufferSize = ctx.sampleRate * 0.03;
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
@@ -71,44 +164,142 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
         }
         const noise = ctx.createBufferSource();
         noise.buffer = buffer;
-
+        
         const filter = ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 2500 + Math.random() * 500;
+        filter.type = 'bandpass';
+        filter.frequency.value = 800 + Math.random() * 300; 
+        filter.Q.value = 0.5;
 
         const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.3, ctx.currentTime);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
-
+        noiseGain.gain.setValueAtTime(0.4, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.03);
+        
         noise.connect(filter);
         filter.connect(noiseGain);
         noiseGain.connect(ctx.destination);
-        noise.start();
-      } else {
-        // Error thud
-        const osc = ctx.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(150, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.1);
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.1);
+        noise.start(t);
+      } else if (soundProfile === 'typewriter') {
+        // 1. Heavy mechanical thud
+        const thud = ctx.createOscillator();
+        thud.type = 'square';
+        thud.frequency.setValueAtTime(300, t);
+        thud.frequency.exponentialRampToValueAtTime(50, t + 0.04);
+        const thudGain = ctx.createGain();
+        thudGain.gain.setValueAtTime(0.6, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.01, t + 0.04);
+        thud.connect(thudGain);
+        thudGain.connect(ctx.destination);
+        thud.start(t);
+        thud.stop(t + 0.04);
+
+        // 2. Metallic clank
+        const metal = ctx.createOscillator();
+        metal.type = 'sine';
+        metal.frequency.setValueAtTime(1500 + Math.random() * 500, t);
+        metal.frequency.exponentialRampToValueAtTime(800, t + 0.06);
+        const metalGain = ctx.createGain();
+        metalGain.gain.setValueAtTime(0.2, t);
+        metalGain.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+        metal.connect(metalGain);
+        metalGain.connect(ctx.destination);
+        metal.start(t);
+        metal.stop(t + 0.06);
       }
     } catch (e) {
       console.error("Audio playback failed", e);
     }
-  }, [soundEnabled]);
+  }, [soundProfile]);
+
+  const playSuccessSound = useCallback(() => {
+    if (soundProfile === 'none') return;
+    try {
+      initAudio();
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const t = ctx.currentTime;
+      // Arpeggio: C4, E4, G4, C5 for a nice success chime
+      const freqs = [261.63, 329.63, 392.00, 523.25];
+      
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        
+        const startTime = t + i * 0.1;
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(startTime);
+        osc.stop(startTime + 0.5);
+      });
+    } catch (e) {
+      console.error("Success audio failed", e);
+    }
+  }, [soundProfile]);
+
+  const playUIClick = useCallback(() => {
+    if (soundProfile === 'none') return;
+    try {
+      initAudio();
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, t);
+      osc.frequency.exponentialRampToValueAtTime(300, t + 0.05);
+      
+      gain.gain.setValueAtTime(0.1, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(t);
+      osc.stop(t + 0.05);
+    } catch (e) {
+      console.error("UI audio failed", e);
+    }
+  }, [soundProfile]);
 
   const { cursorIndex, mistakes, status, reset, lastMistakeIndex } = useTyping(lesson.content, (wpm, accuracy, durationSec, score) => {
     setResults({ wpm, accuracy, durationSec, score });
     onComplete(wpm, accuracy);
+    playSuccessSound();
   }, playSound);
 
   const chars = lesson.content.split('');
+
+  useEffect(() => {
+    setResults(null);
+  }, [lesson.id]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (status === 'finished' && e.key === 'Enter') {
+        playUIClick();
+        if (onNext) {
+          onNext();
+        } else {
+          onBack();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [status, onNext, onBack, playUIClick]);
 
   const kbStyles: {id: KeyboardStyle, name: string, previewClass: string}[] = [
     { id: 'standard', name: 'Standard', previewClass: 'bg-[#333] border border-gray-500 text-gray-300' },
@@ -123,24 +314,17 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
       {/* Top Navbar */}
       <nav className="h-14 bg-white dark:bg-[#3e3e42] flex items-center justify-between px-4 border-b border-gray-200 dark:border-[#2d2d30] shadow-sm relative z-50">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="text-gray-500 dark:text-[#8e8e93] hover:text-gray-900 dark:hover:text-white transition-colors">
+          <button onClick={() => { playUIClick(); onBack(); }} className="text-gray-500 dark:text-[#8e8e93] hover:text-gray-900 dark:hover:text-white transition-colors">
             <Menu className="w-6 h-6" />
           </button>
           <h1 className="text-gray-800 dark:text-white text-base font-medium">Lesson {lesson.id}: {lesson.title}</h1>
         </div>
         <div className="flex items-center gap-6 text-gray-500 dark:text-[#8e8e93]">
-          <button onClick={reset} title="Restart Lesson" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+          <button onClick={() => { playUIClick(); reset(); }} title="Restart Lesson" className="hover:text-gray-900 dark:hover:text-white transition-colors">
             <RotateCw className="w-5 h-5" />
           </button>
           <button 
-            onClick={() => setShowKeyboardSettings(!showKeyboardSettings)} 
-            title="Keyboard Settings" 
-            className={`${showKeyboardSettings ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-[#8e8e93]'} hover:text-gray-900 dark:hover:text-white transition-colors relative`}
-          >
-            <Keyboard className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => setShowHands(!showHands)} 
+            onClick={() => { playUIClick(); setShowHands(!showHands); }} 
             title="Toggle Hands" 
             className={`${showHands ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-[#8e8e93]'} hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
@@ -148,26 +332,28 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
           </button>
           <button 
             onClick={() => {
-              setSoundEnabled(!soundEnabled);
+              playUIClick();
+              setSoundProfile(prev => prev === 'none' ? 'mechanical' : 'none');
               initAudio();
             }} 
             title="Toggle Sound" 
-            className={`${soundEnabled ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-[#8e8e93]'} hover:text-gray-900 dark:hover:text-white transition-colors`}
+            className={`${soundProfile !== 'none' ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-[#8e8e93]'} hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
-            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            {soundProfile !== 'none' ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
           </button>
           <button 
+            onClick={() => { playUIClick(); setShowSettings(!showSettings); }} 
             title="Settings" 
-            className={`text-gray-500 dark:text-[#8e8e93] hover:text-gray-900 dark:hover:text-white transition-colors`}
+            className={`${showSettings ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-[#8e8e93]'} hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <Settings className="w-5 h-5" />
           </button>
         </div>
       </nav>
 
-      {/* Keyboard Settings Dropdown */}
+      {/* Settings Dropdown */}
       <AnimatePresence>
-        {showKeyboardSettings && (
+        {showSettings && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -184,16 +370,65 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
               </button>
             </div>
             
-            <div className="mb-4 flex justify-between items-center text-sm">
-              <span className="font-medium text-gray-800 dark:text-gray-200">Keyboard Layout</span>
-              <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs"><Keyboard className="w-3 h-3"/> United States</span>
+            <div className="mb-4 flex flex-col gap-2 text-sm">
+              <span className="font-medium text-gray-800 dark:text-gray-200">Sound Profile</span>
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  onClick={() => { playUIClick(); setSoundProfile('pop'); initAudio(); }}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${soundProfile === 'pop' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-[#444] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#555]'}`}
+                >
+                  Pop
+                </button>
+                <button 
+                  onClick={() => { playUIClick(); setSoundProfile('clack'); initAudio(); }}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${soundProfile === 'clack' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-[#444] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#555]'}`}
+                >
+                  Clack
+                </button>
+                <button 
+                  onClick={() => { playUIClick(); setSoundProfile('mechanical'); initAudio(); }}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${soundProfile === 'mechanical' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-[#444] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#555]'}`}
+                >
+                  Mechanical
+                </button>
+                <button 
+                  onClick={() => { playUIClick(); setSoundProfile('typewriter'); initAudio(); }}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${soundProfile === 'typewriter' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-[#444] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#555]'}`}
+                >
+                  Typewriter
+                </button>
+                <button 
+                  onClick={() => { 
+                    playUIClick();
+                    if (customAudioBufferRef.current) {
+                      setSoundProfile('custom');
+                    }
+                    fileInputRef.current?.click(); 
+                  }}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-colors ${soundProfile === 'custom' ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-[#444] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#555]'}`}
+                >
+                  {customAudioBufferRef.current ? 'Custom (Loaded)' : 'Upload Custom'}
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleCustomAudioUpload} 
+                  accept="audio/*" 
+                  className="hidden" 
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mt-6">
+            <div className="mb-4 flex justify-between items-center text-sm border-t border-gray-100 dark:border-[#444] pt-4">
+              <span className="font-medium text-gray-800 dark:text-gray-200">Keyboard Theme</span>
+              <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs"><Keyboard className="w-3 h-3"/> Layout</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mt-4">
               {kbStyles.map(style => (
                 <div 
                   key={style.id} 
-                  onClick={() => setKbStyle(style.id)}
+                  onClick={() => { playUIClick(); setKbStyle(style.id); }}
                   className="flex flex-col items-center gap-2 cursor-pointer group"
                 >
                   <div className={`w-16 h-12 rounded flex items-center justify-center text-xs font-bold ${style.previewClass} ${kbStyle === style.id ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-[#333]' : ''}`}>
@@ -401,7 +636,7 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
             {/* Bottom Bar */}
             <div className="h-20 bg-white dark:bg-[#252526] w-full flex items-center justify-between px-12 text-gray-500 dark:text-[#888] shrink-0">
               <button 
-                onClick={reset}
+                onClick={() => { playUIClick(); reset(); }}
                 className="px-8 py-2.5 bg-gray-100 dark:bg-[#333] hover:bg-gray-200 dark:hover:bg-[#444] border border-gray-200 dark:border-[#444] text-gray-600 dark:text-[#aaa] rounded-full font-medium transition-colors text-sm"
               >
                 {t('retry')}
@@ -410,10 +645,12 @@ export function TypingView({ lesson, onComplete, onBack }: TypingViewProps) {
                 {t('goodWork')}
               </div>
               <button 
-                onClick={onBack}
-                className="px-10 py-2.5 bg-emerald-500 dark:bg-[#6bcf8a] hover:bg-emerald-600 dark:hover:bg-[#5bbf7a] text-white rounded-full font-medium transition-colors flex items-center justify-center shadow-sm"
+                onClick={() => { playUIClick(); if(onNext) { onNext(); } else { onBack(); } }}
+                className="px-10 py-2.5 bg-emerald-500 dark:bg-[#6bcf8a] hover:bg-emerald-600 dark:hover:bg-[#5bbf7a] text-white rounded-full font-medium transition-colors flex items-center justify-center shadow-sm gap-2"
               >
-                <ArrowRight className="w-5 h-5" />
+                <span>{onNext ? 'Next Lesson' : 'Continue'}</span>
+                <div className="flex items-center justify-center bg-white/20 rounded px-1.5 py-0.5 text-xs font-bold">↵ Enter</div>
+                <ArrowRight className="w-4 h-4 ml-1" />
               </button>
             </div>
           </motion.div>

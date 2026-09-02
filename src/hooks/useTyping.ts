@@ -83,5 +83,10 @@ export function useTyping(text: string, onFinish: (wpm: number, accuracy: number
     setLastMistakeIndex(null);
   }, []);
 
+  // Reset when text changes (i.e. next lesson)
+  useEffect(() => {
+    reset();
+  }, [text, reset]);
+
   return { cursorIndex, mistakes, status, reset, lastMistakeIndex };
 }
