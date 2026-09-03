@@ -1,35 +1,40 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 
 export function AdBanner() {
-  const bannerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Avoid re-injecting the script multiple times
-    if (bannerRef.current && bannerRef.current.children.length === 0) {
-      const conf = document.createElement('script');
-      conf.type = 'text/javascript';
-      conf.innerHTML = `
-        atOptions = {
-          'key' : '105a0f16b3c74bda8d03c8d262672877',
-          'format' : 'iframe',
-          'height' : 90,
-          'width' : 728,
-          'params' : {}
-        };
-      `;
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.async = true;
-      script.dataset.cfasync = 'false';
-      script.src = 'https://pl31159039.profitableratecpmnetwork.com/105a0f16b3c74bda8d03c8d262672877/invoke.js';
-      
-      bannerRef.current.appendChild(script);
-    }
-  }, []);
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: transparent; }
+        </style>
+      </head>
+      <body>
+        <script>
+          atOptions = {
+            'key' : '105a0f16b3c74bda8d03c8d262672877',
+            'format' : 'iframe',
+            'height' : 90,
+            'width' : 728,
+            'params' : {}
+          };
+        </script>
+        <script type="text/javascript" src="https://pl31159039.profitableratecpmnetwork.com/105a0f16b3c74bda8d03c8d262672877/invoke.js"></script>
+      </body>
+    </html>
+  `;
 
   return (
     <div className="flex justify-center items-center w-full my-6 overflow-hidden min-h-[90px]">
-      <div id="container-105a0f16b3c74bda8d03c8d262672877" ref={bannerRef}></div>
+      <iframe
+        srcDoc={html}
+        width="728"
+        height="90"
+        frameBorder="0"
+        scrolling="no"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        title="Ad Banner"
+      ></iframe>
     </div>
   );
 }

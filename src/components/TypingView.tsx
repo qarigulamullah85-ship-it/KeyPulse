@@ -449,12 +449,12 @@ export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewPro
       <div className="flex-1 relative flex flex-col items-center pt-24 pb-8 overflow-hidden">
         
         {/* Left Ad */}
-        <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10">
+        <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 shadow-lg bg-gray-50 dark:bg-[#323232] rounded-md overflow-hidden">
           <AdVertical />
         </div>
 
         {/* Right Ad */}
-        <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10">
+        <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10 shadow-lg bg-gray-50 dark:bg-[#323232] rounded-md overflow-hidden">
           <AdVertical />
         </div>
 
