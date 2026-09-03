@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { Lesson, UserStats } from '../types';
 import { COURSES } from '../data';
+import { AdBanner } from './AdBanner';
 import { Lock, CheckCircle, Package, Search, Clock, Keyboard, User, Rocket, Award, Zap, Shield, Target, Gamepad2, LogOut, Activity, Star, Moon, Sun } from 'lucide-react';
 import { loginWithGoogle, logout, auth } from '../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -134,6 +135,8 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto px-8 pb-24 z-10">
         <div className="max-w-[1200px] mx-auto">
+          
+          <AdBanner />
           
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (

@@ -6,6 +6,7 @@ import { RotateCcw, ArrowRight, Menu, RotateCw, Keyboard, Hand, Volume2, VolumeX
 import { VirtualKeyboard, KeyboardStyle } from './VirtualKeyboard';
 import { HandsGuide } from './HandsGuide';
 import { useLanguage } from '../i18n';
+import { AdVertical } from './AdVertical';
 
 interface TypingViewProps {
   lesson: Lesson;
@@ -447,6 +448,16 @@ export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewPro
       {/* Main Typing Area */}
       <div className="flex-1 relative flex flex-col items-center pt-24 pb-8 overflow-hidden">
         
+        {/* Left Ad */}
+        <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10">
+          <AdVertical />
+        </div>
+
+        {/* Right Ad */}
+        <div className="hidden xl:block absolute right-4 top-1/2 -translate-y-1/2 z-10">
+          <AdVertical />
+        </div>
+
         {/* START TYPING Vertical Ribbon */}
         {status === 'waiting' && (
           <div className="absolute left-[8%] md:left-[15%] top-0 bg-[#8c52ff] w-16 h-32 rounded-b-md flex items-center justify-center shadow-lg">

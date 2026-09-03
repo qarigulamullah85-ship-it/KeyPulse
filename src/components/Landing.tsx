@@ -3,6 +3,7 @@ import { useLanguage } from '../i18n';
 import { motion } from 'motion/react';
 import { loginWithGoogle, auth } from '../lib/firebase';
 import { useState, useEffect } from 'react';
+import { AdBanner } from './AdBanner';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 interface LandingProps {
@@ -96,6 +97,9 @@ export function Landing({ onStart }: LandingProps) {
           <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
         </motion.button>
       </div>
+
+      {/* Ad Banner */}
+      <AdBanner />
 
       {/* Features Section */}
       <div className="bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800 py-24 z-20 relative transition-colors duration-300">
