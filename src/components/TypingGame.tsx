@@ -75,14 +75,14 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
     let didSpawn = false;
 
     // Spawn new word
-    if (now - lastSpawnTime.current > 2000 && currentWords.length < 5 && wordsToSpawn.current.length > 0) {
+    if (now - lastSpawnTime.current > 1200 && currentWords.length < 8 && wordsToSpawn.current.length > 0) {
       const text = wordsToSpawn.current.shift()!;
       const newWord: FallingWord = {
         id: Math.random(),
         text,
-        x: Math.random() * 80 + 10,
+        x: Math.random() * 70 + 15, // Keep it more towards the center
         y: isBalloon ? 110 : -10,
-        speed: (0.1 + Math.random() * 0.1) * (isBalloon ? -1 : 1)
+        speed: (0.05 + Math.random() * 0.06) * (isBalloon ? -1 : 1) // Slower speed
       };
       currentWords.push(newWord);
       lastSpawnTime.current = now;
@@ -201,9 +201,17 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
       </div>
 
       {/* Game Area */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className={`flex-1 relative overflow-hidden ${lesson.gameType === 'balloon' ? 'bg-gradient-to-b from-sky-400 to-sky-200' : ''}`}>
         {lesson.gameType === 'balloon' && (
-          <div className="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-rose-500/50 to-transparent z-10 pointer-events-none" />
+          <>
+            {/* Sun */}
+            <div className="absolute top-10 left-10 w-24 h-24 bg-yellow-400 rounded-full shadow-[0_0_40px_rgba(250,204,21,0.6)] z-0" />
+            {/* Clouds */}
+            <div className="absolute top-20 right-20 w-32 h-10 bg-white/80 rounded-full blur-[2px] z-0" />
+            <div className="absolute top-16 right-24 w-20 h-12 bg-white/80 rounded-full blur-[2px] z-0" />
+            <div className="absolute top-40 left-1/3 w-40 h-12 bg-white/60 rounded-full blur-[2px] z-0" />
+            <div className="absolute top-36 left-[35%] w-24 h-16 bg-white/60 rounded-full blur-[2px] z-0" />
+          </>
         )}
         <AnimatePresence>
           {words.map(w => (
@@ -217,18 +225,10 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
               style={{ top: `${w.y}%`, left: `${w.x}%` }}
             >
               {lesson.gameType === 'balloon' && (
-                <div className="relative w-24 h-28 bg-rose-500 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] shadow-inner mb-1 flex items-center justify-center before:content-[''] before:absolute before:bottom-[-8px] before:w-0 before:h-0 before:border-l-[6px] before:border-r-[6px] before:border-b-[10px] before:border-transparent before:border-b-rose-600 after:content-[''] after:absolute after:bottom-[-40px] after:w-0.5 after:h-8 after:bg-gray-300">
-                  <div className="absolute top-4 right-4 w-4 h-6 bg-white/30 rounded-full rotate-45 blur-[1px]"></div>
-                  <div className="z-10 text-white font-black text-xl drop-shadow-md">
-                    {/* Highlight typed portion if it matches start of word */}
-                    {w.text.startsWith(inputValue.trim()) && inputValue.trim().length > 0 ? (
-                      <>
-                        <span className="text-rose-200">{inputValue.trim()}</span>
-                        <span>{w.text.slice(inputValue.trim().length)}</span>
-                      </>
-                    ) : (
-                      w.text
-                    )}
+                <div className="relative w-20 h-24 bg-rose-500 rounded-[50%_50%_50%_50%/60%_60%_40%_40%] shadow-inner mb-1 flex items-center justify-center before:content-[''] before:absolute before:bottom-[-6px] before:w-0 before:h-0 before:border-l-[5px] before:border-r-[5px] before:border-b-[8px] before:border-transparent before:border-b-rose-600 after:content-[''] after:absolute after:bottom-[-30px] after:w-0.5 after:h-6 after:bg-gray-300">
+                  <div className="absolute top-3 right-3 w-3 h-5 bg-white/30 rounded-full rotate-45 blur-[1px]"></div>
+                  <div className="z-10 text-white font-black text-2xl drop-shadow-md">
+                    {w.text}
                   </div>
                 </div>
               )}
@@ -250,7 +250,7 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
         </AnimatePresence>
         
         {/* Ground */}
-        <div className={`absolute bottom-0 left-0 w-full h-2 ${lesson.gameType === 'balloon' ? 'bg-gradient-to-t from-sky-500/50 to-transparent' : 'bg-gradient-to-t from-rose-500/50 to-transparent'}`} />
+        <div className={`absolute bottom-0 left-0 w-full h-2 ${lesson.gameType === 'balloon' ? 'hidden' : 'bg-gradient-to-t from-rose-500/50 to-transparent'}`} />
       </div>
 
       {/* Input Area */}

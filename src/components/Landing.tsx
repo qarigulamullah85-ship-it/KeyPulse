@@ -1,152 +1,140 @@
-import { Keyboard, ArrowRight, Activity, Gamepad2, Globe, Sparkles } from 'lucide-react';
-import { useLanguage } from '../i18n';
-import { motion } from 'motion/react';
-import { loginWithGoogle, auth } from '../lib/firebase';
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../i18n';
 import { AdBanner } from './AdBanner';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { Globe } from 'lucide-react';
 
 interface LandingProps {
   onStart: () => void;
 }
 
 export function Landing({ onStart }: LandingProps) {
-  const { t, language, setLanguage } = useLanguage();
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const { language, setLanguage } = useLanguage();
+  const [isStarting, setIsStarting] = useState(false);
+  const [textIndex, setTextIndex] = useState(0);
+  
+  const fullText = "Learn Touch Typing for free!";
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
+    if (textIndex < fullText.length) {
+      const timeout = setTimeout(() => {
+        setTextIndex(textIndex + 1);
+      }, 80);
+      return () => clearTimeout(timeout);
+    }
+  }, [textIndex, fullText.length]);
+
+  const handleStart = () => {
+    setIsStarting(true);
+    setTimeout(() => {
+      onStart();
+    }, 2000); // 2 seconds animation before opening
+  };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-gray-900 text-slate-900 dark:text-gray-100 relative overflow-hidden flex flex-col font-sans transition-colors duration-300">
-      {/* Background decorations */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 dark:bg-blue-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
-
-      {/* Top Navbar */}
-      <nav className="w-full h-20 flex items-center justify-between px-8 z-20 max-w-7xl mx-auto">
-        <div className="text-slate-900 dark:text-white font-bold text-2xl flex items-center gap-2">
-          <div className="bg-slate-900 dark:bg-gray-800 text-white p-1.5 rounded-lg shadow-sm">
-            <Keyboard className="w-6 h-6" />
-          </div>
-          KeyPulse
+    <div className="min-h-screen bg-[#0F172A] relative overflow-hidden flex flex-col font-sans">
+      {/* Night Sky Background elements */}
+      <div className="absolute inset-0 z-0">
+        {/* Stars */}
+        {[...Array(60)].map((_, i) => (
+          <div 
+            key={i} 
+            className="absolute bg-white rounded-full opacity-60 animate-pulse"
+            style={{
+              width: Math.random() * 3 + 'px',
+              height: Math.random() * 3 + 'px',
+              top: Math.random() * 70 + '%',
+              left: Math.random() * 100 + '%',
+              animationDuration: (Math.random() * 3 + 2) + 's',
+              animationDelay: Math.random() * 2 + 's',
+            }}
+          />
+        ))}
+        {/* Moon */}
+        <div className="absolute top-[15%] left-[10%] w-32 h-32 md:w-48 md:h-48 bg-blue-100 rounded-full shadow-[0_0_80px_20px_rgba(255,255,255,0.15)] opacity-90 flex items-center justify-center overflow-hidden">
+           <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-50 to-blue-200 shadow-inner relative">
+             <div className="absolute top-1/4 left-1/4 w-8 h-8 bg-blue-200/50 rounded-full shadow-inner blur-[1px]" />
+             <div className="absolute top-1/2 left-2/3 w-12 h-12 bg-blue-200/40 rounded-full shadow-inner blur-[1px]" />
+             <div className="absolute bottom-1/4 left-1/3 w-6 h-6 bg-blue-200/60 rounded-full shadow-inner blur-[1px]" />
+           </div>
         </div>
-        <div className="flex items-center gap-6 text-sm font-semibold text-slate-600 dark:text-gray-300">
-          <button className="hover:text-slate-900 dark:hover:text-white transition-colors hidden md:block">{t('features')}</button>
-          
-          <div className="relative group flex items-center">
-             <Globe className="w-4 h-4 mr-1 text-slate-400 dark:text-gray-500" />
-            <select 
-              className="bg-transparent text-slate-600 dark:text-gray-300 outline-none cursor-pointer hover:text-slate-900 dark:hover:text-white appearance-none pr-4 font-semibold"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+        
+        {/* Clouds at the bottom */}
+        <div className="absolute bottom-0 left-0 w-full h-[30vh] bg-gradient-to-t from-white/20 to-transparent pointer-events-none" />
+        <div className="absolute -bottom-20 left-0 w-full flex space-x-[-5%] overflow-hidden opacity-40 pointer-events-none">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="w-64 h-64 bg-white rounded-full shrink-0 mt-20 blur-md" />
+          ))}
+        </div>
+      </div>
+
+      {/* Language Selector */}
+      <div className="absolute top-6 right-6 z-20">
+        <div className="relative group flex items-center bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 hover:bg-white/20 transition-colors">
+           <Globe className="w-4 h-4 mr-2 text-white" />
+          <select 
+            className="bg-transparent text-white outline-none cursor-pointer appearance-none pr-4 font-medium text-sm"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <option value="en" className="text-gray-900">English</option>
+            <option value="es" className="text-gray-900">Español</option>
+            <option value="ur" className="text-gray-900">اردو (Urdu)</option>
+          </select>
+          <span className="absolute right-3 pointer-events-none text-[10px] text-white">▼</span>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
+        <AnimatePresence mode="wait">
+          {!isStarting ? (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center text-center"
             >
-              <option value="en" className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">English</option>
-              <option value="es" className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">Español</option>
-              <option value="ur" className="bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">اردو (Urdu)</option>
-            </select>
-            <span className="absolute right-0 top-[2px] pointer-events-none text-[10px] text-slate-400 dark:text-gray-500">▼</span>
-          </div>
-
-          {!user ? (
-            <button onClick={loginWithGoogle} className="bg-white dark:bg-gray-800 text-slate-900 dark:text-white border border-slate-200 dark:border-gray-700 px-5 py-2 rounded-full hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors shadow-sm">{t('login')}</button>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold text-white mb-12 min-h-[80px] md:min-h-[100px] flex items-center tracking-tight">
+                {fullText.substring(0, textIndex)}
+                <span className="inline-block w-[3px] h-10 md:h-16 lg:h-16 bg-white ml-1 animate-pulse" />
+              </h1>
+              
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2.5 }}
+                onClick={handleStart}
+                className="bg-white text-slate-900 px-12 py-4 rounded-lg font-bold text-lg hover:bg-blue-50 transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.3)] ring-4 ring-white/20"
+              >
+                Get Started
+              </motion.button>
+            </motion.div>
           ) : (
-            <button onClick={onStart} className="text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors">Dashboard</button>
+            <motion.div
+              key="loader"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.5 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center justify-center"
+            >
+              {/* Cool rotating cube loading animation */}
+              <motion.div 
+                animate={{ rotate: 360, borderRadius: ["20%", "50%", "20%"] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                className="w-20 h-20 bg-blue-400 shadow-[0_0_40px_rgba(96,165,250,0.8)]" 
+              />
+            </motion.div>
           )}
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-20 px-6 pt-12 pb-32 max-w-4xl mx-auto text-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-sm font-bold mb-8 shadow-sm"
-        >
-          <Sparkles className="w-4 h-4" /> {t('newNextGen')}
-        </motion.div>
-
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-tight mb-6"
-        >
-          {t('heroTitle')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">KeyPulse</span>
-        </motion.h1>
-
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-xl text-slate-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed"
-        >
-          {t('heroSubtitle')}
-        </motion.p>
-
-        <motion.button 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={onStart}
-          className="group flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-full font-bold text-lg hover:bg-blue-600 dark:hover:bg-blue-50 hover:shadow-xl hover:shadow-blue-500/20 dark:hover:shadow-white/10 transition-all active:scale-95"
-        >
-          {t('startTypingNow')}
-          <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-        </motion.button>
+        </AnimatePresence>
       </div>
 
       {/* Ad Banner */}
-      <AdBanner />
-
-      {/* Features Section */}
-      <div className="bg-white dark:bg-gray-900 border-t border-slate-100 dark:border-gray-800 py-24 z-20 relative transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col items-center text-center p-6"
-          >
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-blue-100 dark:border-blue-900/50">
-              <Activity className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('feature1Title')}</h3>
-            <p className="text-slate-600 dark:text-gray-400 leading-relaxed font-medium">{t('feature1Desc')}</p>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-col items-center text-center p-6"
-          >
-            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-indigo-100 dark:border-indigo-900/50">
-              <Gamepad2 className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('feature2Title')}</h3>
-            <p className="text-slate-600 dark:text-gray-400 leading-relaxed font-medium">{t('feature2Desc')}</p>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col items-center text-center p-6"
-          >
-            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-100 dark:border-emerald-900/50">
-              <Globe className="w-8 h-8" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{t('feature3Title')}</h3>
-            <p className="text-slate-600 dark:text-gray-400 leading-relaxed font-medium">{t('feature3Desc')}</p>
-          </motion.div>
-
-        </div>
+      <div className="relative z-20 pb-8 flex justify-center w-full">
+        <AdBanner />
       </div>
     </div>
   );

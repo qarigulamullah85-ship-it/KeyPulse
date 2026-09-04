@@ -143,8 +143,7 @@ export default function App() {
             }}
           />
         )}
-
-        {view === 'typing' && activeLesson && activeLesson.gameType === 'falling-words' && (
+        {view === 'typing' && activeLesson && activeLesson.gameType && (
           <TypingGame 
             lesson={activeLesson}
             onComplete={handleLessonComplete}

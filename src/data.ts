@@ -16,7 +16,7 @@ const earlyLessons = [
   { title: "Keys a & ;", content: "a ; a ; a ; a ; aa ;; aa ;; a; ;a ;a a; a ;" },
   { title: "Review: a & ;", content: "a s d f j k l ; as df jk l; fd sa kl ;j asdf" },
   { title: "First 8 Keys", content: "asdf jkl; asdf jkl; fdsa ;lkj asdf jkl; fdsa" },
-  { title: "Play: First 8 Keys", content: "asdf jkl; asdf jkl; asdf", gameType: "falling-words" },
+  { title: "Play: First 8 Keys", content: "a s d f j k l ; a s d f j k l ;", gameType: "balloon" },
   { title: "Keys e & i", content: "e i e i ee ii ei ie de ki fe ji se li ae ;i" },
   { title: "Keys r & u", content: "r u r u rr uu ru ur fr ju dr ku sr lu ar ;u" },
   { title: "Keys t & y", content: "t y t y tt yy ty yt ft jy dt ky st ly at ;y" },
@@ -98,10 +98,14 @@ export const COURSES: Lesson[] = Array.from({ length: 685 }, (_, i) => {
     const early = earlyLessons[i];
     title = early.title;
     content = early.content;
-    if ((early as any).gameType) {
-      gameType = (early as any).gameType;
+    // Strictly use early.gameType, overriding any math-based gameType
+    gameType = (early as any).gameType || undefined;
+    
+    // If it's a game in the early lessons, make the content longer for more practice
+    if (gameType) {
+      content = Array(4).fill(early.content).join(' ');
     }
-  } 
+  }
   // 26-100: Common words building up
   else if (id <= 100) {
     const wordCount = 10 + Math.floor((id - 25) * 0.4); // Increases gradually up to ~40 words
