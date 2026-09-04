@@ -7,6 +7,7 @@ import { VirtualKeyboard, KeyboardStyle } from './VirtualKeyboard';
 import { HandsGuide } from './HandsGuide';
 import { useLanguage } from '../i18n';
 import { AdVertical } from './AdVertical';
+import { AdCustom } from './AdCustom';
 
 interface TypingViewProps {
   lesson: Lesson;
@@ -446,7 +447,12 @@ export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewPro
       </AnimatePresence>
 
       {/* Main Typing Area */}
-      <div className="flex-1 relative flex flex-col items-center pt-24 pb-8 overflow-hidden">
+      <div className="flex-1 relative flex flex-col items-center pt-8 pb-8 overflow-hidden">
+        
+        {/* Custom Ad */}
+        <div className="w-full max-w-[728px] mx-auto z-10">
+          <AdCustom />
+        </div>
         
         {/* Left Ad */}
         <div className="hidden xl:block absolute left-4 top-1/2 -translate-y-1/2 z-10 shadow-lg bg-gray-50 dark:bg-[#323232] rounded-md overflow-hidden">

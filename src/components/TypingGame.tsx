@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Lesson } from '../types';
 import { ArrowRight, Heart, RotateCcw, Trophy } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import { AdCustom } from './AdCustom';
 
 interface TypingGameProps {
   lesson: Lesson;
@@ -184,18 +185,25 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
   return (
     <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white overflow-hidden relative transition-colors duration-300" ref={containerRef}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-white/10 relative z-10 bg-white/50 dark:bg-slate-900/50 backdrop-blur">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-          <RotateCcw className="w-5 h-5" /> {t('backToDashboard')}
-        </button>
-        <div className="flex items-center gap-8 text-lg font-bold">
-          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-            <Trophy className="w-5 h-5" /> {t('score')}: {score}
+      <div className="flex flex-col z-10 bg-white/50 dark:bg-slate-900/50 backdrop-blur border-b border-slate-200 dark:border-white/10 relative">
+        <div className="flex items-center justify-between p-6">
+          <button onClick={onBack} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+            <RotateCcw className="w-5 h-5" /> {t('backToDashboard')}
+          </button>
+          <div className="flex items-center gap-8 text-lg font-bold">
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+              <Trophy className="w-5 h-5" /> {t('score')}: {score}
+            </div>
+            <div className="flex items-center gap-2 text-rose-500">
+              {Array.from({ length: Math.max(3, lives) }).map((_, i) => (
+                <Heart key={i} className={`w-5 h-5 ${i < lives ? 'fill-rose-500' : 'text-slate-300 dark:text-slate-700'}`} />
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-rose-500">
-            {Array.from({ length: Math.max(3, lives) }).map((_, i) => (
-              <Heart key={i} className={`w-5 h-5 ${i < lives ? 'fill-rose-500' : 'text-slate-300 dark:text-slate-700'}`} />
-            ))}
+        </div>
+        <div className="w-full flex justify-center pb-4">
+          <div className="w-full max-w-[728px]">
+            <AdCustom />
           </div>
         </div>
       </div>

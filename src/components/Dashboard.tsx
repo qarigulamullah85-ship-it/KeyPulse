@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Lesson, UserStats } from '../types';
 import { COURSES } from '../data';
 import { AdBanner } from './AdBanner';
+import { AdCustom } from './AdCustom';
 import { Lock, CheckCircle, Package, Search, Clock, Keyboard, Rocket, Gamepad2, LogOut, Star, Play, Home } from 'lucide-react';
 import { loginWithGoogle, logout, auth } from '../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -121,6 +122,7 @@ export function Dashboard({ stats, onSelectLesson, customLessons }: DashboardPro
       <div className="flex-1 overflow-y-auto px-8 pb-24 z-10 pt-10">
         <div className="max-w-[1400px] mx-auto">
           
+          <AdCustom />
           <AdBanner />
           
           <div className="mb-10">
