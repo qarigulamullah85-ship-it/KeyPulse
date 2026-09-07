@@ -8,6 +8,8 @@ import { Lock, CheckCircle, Package, Search, Clock, Keyboard, Rocket, Gamepad2, 
 import { loginWithGoogle, logout, auth } from '../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { useLanguage } from '../i18n';
+import { useTheme } from '../ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 interface DashboardProps {
   stats: UserStats;
@@ -15,7 +17,11 @@ interface DashboardProps {
   customLessons: Lesson[];
   onCreateCustom: () => void;
   changeView?: (view: string) => void;
+  onStartTest?: (duration: number) => void;
+  updateStats?: (updates: Partial<UserStats>) => void;
 }
+
+const AVATARS = ["🦊", "🐱", "🐶", "🐼", "🐯", "🦁", "🐸", "🐵", "🦄", "🤖", "👻", "👽", "😎", "🤓", "🤠"];
 
 const getLessonIcon = (id: number, isGame: boolean) => {
   if (isGame) return <Gamepad2 className="w-12 h-12" />;
@@ -37,10 +43,12 @@ const getLessonIcon = (id: number, isGame: boolean) => {
   );
 };
 
-export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom, changeView }: DashboardProps) {
+export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom, changeView, onStartTest, updateStats }: DashboardProps) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [unlockConfirmLesson, setUnlockConfirmLesson] = useState<Lesson | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const { language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -72,7 +80,7 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
   const totalPoints = stats.completedLessons.length * 150;
 
   return (
-    <div className="w-full min-h-screen bg-[#F0F4F8] text-slate-900 flex flex-col font-sans relative overflow-hidden transition-colors duration-300">
+    <div className="w-full min-h-screen bg-[#F0F4F8] dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col font-sans relative overflow-hidden transition-colors duration-300">
       
       {/* Top Navbar */}
       <nav className="w-full h-16 bg-[#2C3E50] text-white flex items-center justify-between px-8 z-20 shadow-md">
@@ -88,6 +96,13 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
         </div>
 
         <div className="flex items-center gap-4 text-sm font-medium">
+          <button 
+            onClick={toggleTheme}
+            className="text-slate-300 hover:text-white transition-colors flex items-center justify-center w-6 h-6"
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <button 
             className="text-slate-300 hover:text-white transition-colors"
             onClick={() => {
@@ -127,7 +142,7 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
           <div><span className="text-slate-900">{totalStars}</span> stars</div>
           <div><span className="text-slate-900">{totalPoints.toLocaleString()}</span> points</div>
         </div>
-        <button className="text-slate-500 hover:text-slate-900 text-xs font-semibold transition-colors">Hide ✕</button>
+        <button className="text-slate-500 dark:text-slate-400 hover:text-slate-900 text-xs font-semibold transition-colors">Hide ✕</button>
       </div>
 
       {/* Main Content Area */}
@@ -137,8 +152,85 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
           <AdCustom />
           <AdBanner />
           
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <div className="text-2xl cursor-pointer hover:scale-110 transition-transform" onClick={() => setShowAvatarPicker(true)}>
+                    {stats.avatar || "👤"}
+                  </div> 
+                  Profile
+                </span>
+              </h3>
+              <div className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                Streak: <strong className="text-orange-500">{stats.streak || 0} 🔥</strong>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                  🥷 Ninja Mode
+                </span>
+                <button 
+                  onClick={() => updateStats?.({ ninjaMode: !stats.ninjaMode })}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${stats.ninjaMode ? 'bg-indigo-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${stats.ninjaMode ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><div className="text-yellow-500">🎖️</div> Achievements</h3>
+              <div className="flex flex-wrap gap-2 mt-2 h-16 overflow-y-auto">
+                {(stats.badges && stats.badges.length > 0) ? stats.badges.map((badge, idx) => (
+                  <span key={idx} className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 text-xs font-bold px-2 py-1 rounded-full border border-amber-200 dark:border-amber-700/50">
+                    {badge}
+                  </span>
+                )) : (
+                  <p className="text-slate-400 text-sm">No badges yet. Start typing to earn!</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><div className="text-blue-500">⏱️</div> Quick Tests</h3>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => { onStartTest?.(60); changeView?.('typing-test'); }} 
+                  className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-sm font-bold py-2 rounded-xl transition-colors border border-slate-300 dark:border-slate-600"
+                >
+                  1 Min
+                </button>
+                <button 
+                  onClick={() => { onStartTest?.(120); changeView?.('typing-test'); }} 
+                  className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-sm font-bold py-2 rounded-xl transition-colors border border-slate-300 dark:border-slate-600"
+                >
+                  2 Min
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2"><div className="text-emerald-500">🎮</div> Modes</h3>
+              <div className="flex flex-col gap-2">
+                <button 
+                  onClick={() => changeView?.('dictation')} 
+                  className="flex-1 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/40 text-indigo-700 dark:text-indigo-300 text-sm font-bold py-1.5 rounded-xl transition-colors border border-indigo-200 dark:border-indigo-800/50"
+                  title="Audio Dictation Mode"
+                >
+                  🎧 Dictate
+                </button>
+                <button 
+                  onClick={() => changeView?.('private-room')} 
+                  className="flex-1 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-300 text-sm font-bold py-1.5 rounded-xl transition-colors border border-emerald-200 dark:border-emerald-800/50"
+                  title="Play with Friends"
+                >
+                  🤝 Friends
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="mb-10">
-            <h2 className="text-3xl font-bold text-slate-700 mb-8 tracking-tight">Home Row</h2>
+            <h2 className="text-3xl font-bold text-slate-700 dark:text-slate-200 mb-8 tracking-tight">Home Row</h2>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {allLessons.map((lesson, index) => {
@@ -169,14 +261,14 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
                   >
                     {/* Top row: ID and Status Icon */}
                     <div className="flex justify-between items-start p-3 z-10">
-                      <span className={`text-xl font-bold ${isLocked ? 'text-slate-400' : 'text-slate-700'}`}>{index + 1}</span>
+                      <span className={`text-xl font-bold ${isLocked ? 'text-slate-400' : 'text-slate-700 dark:text-slate-200'}`}>{index + 1}</span>
                       
                       {isCompleted ? (
                         <div className="bg-[#7CD922] text-white rounded-full p-1 shadow-sm">
                           <CheckCircle className="w-5 h-5" />
                         </div>
                       ) : isNext ? (
-                        <div className="text-slate-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="text-slate-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
                           <Play className="w-6 h-6 fill-current" />
                         </div>
                       ) : (
@@ -203,7 +295,7 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
 
                     {/* Title Bar */}
                     <div className="absolute bottom-0 w-full py-2 px-2 flex items-center justify-center border-t border-slate-100 bg-white group-hover:bg-slate-50 transition-colors">
-                      <span className={`text-[11px] truncate w-full text-center font-bold ${isLocked ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <span className={`text-[11px] truncate w-full text-center font-bold ${isLocked ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {lesson.title}
                       </span>
                     </div>
@@ -216,6 +308,45 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
       </div>
 
       {/* Unlock Confirmation Modal */}
+
+      <AnimatePresence>
+        {showAvatarPicker && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => setShowAvatarPicker(false)}>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-700"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-6">Choose Avatar</h3>
+              
+              <div className="grid grid-cols-5 gap-4 mb-8">
+                {AVATARS.map(avatar => (
+                  <button
+                    key={avatar}
+                    onClick={() => {
+                      updateStats?.({ avatar });
+                      setShowAvatarPicker(false);
+                    }}
+                    className={`text-3xl p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${stats.avatar === avatar ? 'bg-indigo-50 dark:bg-indigo-900/40 ring-2 ring-indigo-500' : ''}`}
+                  >
+                    {avatar}
+                  </button>
+                ))}
+              </div>
+              
+              <button 
+                onClick={() => setShowAvatarPicker(false)}
+                className="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold rounded-xl transition-colors"
+              >
+                Done
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {unlockConfirmLesson && (
           <motion.div 
@@ -240,7 +371,7 @@ export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom
               <div className="flex gap-3">
                 <button 
                   onClick={() => setUnlockConfirmLesson(null)}
-                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

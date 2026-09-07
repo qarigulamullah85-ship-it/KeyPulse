@@ -10,13 +10,14 @@ import { AdVertical } from './AdVertical';
 import { AdCustom } from './AdCustom';
 
 interface TypingViewProps {
+  ninjaMode?: boolean;
   lesson: Lesson;
   onComplete: (wpm: number, accuracy: number) => void;
   onBack: () => void;
   onNext?: () => void;
 }
 
-export function TypingView({ lesson, onComplete, onBack, onNext }: TypingViewProps) {
+export function TypingView({ lesson, onComplete, onBack, onNext, ninjaMode }: TypingViewProps) {
   const { t } = useLanguage();
   const [results, setResults] = useState<{wpm: number, accuracy: number, durationSec: number, score: number} | null>(null);
   

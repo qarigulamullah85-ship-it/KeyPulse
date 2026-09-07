@@ -11,6 +11,9 @@ import { TypingGame } from './components/TypingGame';
 import { TypingBombGame } from './components/TypingBombGame';
 import { TypingPuzzleGame } from './components/TypingPuzzleGame';
 import { KidsTypingGame } from './components/KidsTypingGame';
+import { DictationView } from './components/DictationView';
+import { PrivateRoomView } from './components/PrivateRoomView';
+import { TypingTest } from './components/TypingTest';
 import { LessonCreator } from './components/LessonCreator';
 import { StatsView } from './components/StatsView';
 import { LeaderboardView } from './components/LeaderboardView';
@@ -25,11 +28,12 @@ import { LanguageContext, dictionary } from './i18n';
 
 import { ThemeProvider } from './ThemeContext';
 
-type ViewState = 'landing' | 'dashboard' | 'typing' | 'create' | 'stats' | 'leaderboard' | 'multiplayer' | 'certificate';
+type ViewState = 'landing' | 'dashboard' | 'typing' | 'create' | 'stats' | 'leaderboard' | 'multiplayer' | 'certificate' | 'typing-test' | 'dictation' | 'private-room';
 
 export default function App() {
   const [view, setView] = useState<ViewState>('landing');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [testDuration, setTestDuration] = useState<number>(60);
   const [customLessons, setCustomLessons] = useState<Lesson[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [language, setLanguage] = useState<string>('en');
@@ -88,6 +92,34 @@ export default function App() {
     }
   }, [stats, customLessons, user]);
 
+  const checkAndUpdateStreakAndBadges = (prevStats: UserStats, wpm: number, accuracy: number): UserStats => {
+    const today = new Date().toDateString();
+    let newStreak = prevStats.streak || 0;
+    
+    if (prevStats.lastPlayDate !== today) {
+      if (prevStats.lastPlayDate === new Date(Date.now() - 86400000).toDateString()) {
+        newStreak += 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+
+    const badges = new Set(prevStats.badges || []);
+    if (newStreak >= 3) badges.add("3 Day Streak 🔥");
+    if (newStreak >= 7) badges.add("7 Day Streak 🔥");
+    if (wpm >= 40) badges.add("Speed Demon (40+ WPM) ⚡");
+    if (wpm >= 60) badges.add("Typing Master (60+ WPM) 👑");
+    if (accuracy === 100) badges.add("Perfect Accuracy 🎯");
+    if ((prevStats.completedLessons.length + 1) >= 1) badges.add("First Lesson 🎓");
+
+    return {
+      ...prevStats,
+      streak: newStreak,
+      lastPlayDate: today,
+      badges: Array.from(badges)
+    };
+  };
+
   const handleLessonComplete = (wpm: number, accuracy: number) => {
     if (!activeLesson) return;
 
@@ -100,12 +132,31 @@ export default function App() {
       const completed = new Set(prev.completedLessons);
       completed.add(activeLesson.id);
 
+      const statsWithAchievements = checkAndUpdateStreakAndBadges(prev, wpm, accuracy);
+
       return {
-        ...prev,
+        ...statsWithAchievements,
         history,
         averageWpm: Math.round(totalWpm / history.length),
         averageAccuracy: Math.round(totalAcc / history.length),
         completedLessons: Array.from(completed)
+      };
+    });
+  };
+
+  const updateStats = (updates: Partial<UserStats>) => {
+    setStats(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleTestComplete = (wpm: number, accuracy: number, duration: number) => {
+    setStats(prev => {
+      const testHistory = [...(prev.testHistory || []), { wpm, accuracy, duration, timestamp: Date.now() }];
+      
+      const statsWithAchievements = checkAndUpdateStreakAndBadges(prev, wpm, accuracy);
+
+      return {
+        ...statsWithAchievements,
+        testHistory,
       };
     });
   };
@@ -128,6 +179,8 @@ export default function App() {
             }}
             onCreateCustom={() => setView('create')}
             changeView={setView as any}
+            onStartTest={(duration) => setTestDuration(duration)}
+            updateStats={updateStats}
           />
         )}
 
@@ -139,6 +192,7 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            ninjaMode={stats.ninjaMode}
             onNext={() => {
               // Try to find the next lesson in COURSES
               const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
@@ -159,6 +213,7 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            ninjaMode={stats.ninjaMode}
             onNext={() => {
               const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
               if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
@@ -178,6 +233,7 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            ninjaMode={stats.ninjaMode}
             onNext={() => {
               const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
               if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
@@ -197,6 +253,7 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            ninjaMode={stats.ninjaMode}
             onNext={() => {
               const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
               if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
@@ -216,6 +273,7 @@ export default function App() {
               setActiveLesson(null);
               setView('dashboard');
             }}
+            ninjaMode={stats.ninjaMode}
             onNext={() => {
               const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
               if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
@@ -236,6 +294,22 @@ export default function App() {
         )}
         {view === 'multiplayer' && (
           <MultiplayerView onBack={() => setView('dashboard')} />
+        )}
+        {view === 'dictation' && (
+          <DictationView onBack={() => setView('dashboard')} />
+        )}
+        {view === 'private-room' && (
+          <PrivateRoomView onBack={() => setView('dashboard')} />
+        )}
+        {view === 'typing-test' && (
+          <TypingTest 
+            duration={testDuration}
+            ninjaMode={stats.ninjaMode} 
+            onBack={() => setView('dashboard')} 
+            onComplete={(wpm, accuracy) => {
+              handleTestComplete(wpm, accuracy, testDuration);
+            }} 
+          />
         )}
         {view === 'create' && (
           <LessonCreator 

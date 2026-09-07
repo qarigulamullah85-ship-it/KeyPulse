@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Flag } from 'lucide-react';
+import { MultiplayerChat } from './MultiplayerChat';
 import { useTyping } from '../hooks/useTyping';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth } from '../lib/firebase';
@@ -107,7 +108,7 @@ export function MultiplayerView({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Typing Area */}
-        <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl relative">
+        <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl relative mb-8">
           {!raceStarted && (
             <div className="absolute inset-0 z-10 bg-slate-900/50 rounded-3xl flex items-center justify-center backdrop-blur-sm">
               <div className="text-6xl font-black text-white drop-shadow-2xl">{countdown}</div>
@@ -127,6 +128,11 @@ export function MultiplayerView({ onBack }: { onBack: () => void }) {
               );
             })}
           </div>
+        </div>
+
+        {/* Global Chat Area */}
+        <div className="h-96 w-full max-w-4xl mx-auto mt-8">
+          <MultiplayerChat />
         </div>
       </div>
     </div>
