@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Play, Copy, Check } from 'lucide-react';
 import { db, auth } from '../lib/firebase';
-import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, serverTimestamp , collection } from 'firebase/firestore';
 import { useTyping } from '../hooks/useTyping';
 import { motion } from 'motion/react';
 import { commonWords } from '../data';
@@ -59,10 +59,6 @@ export function PrivateRoomView({ onBack }: { onBack: () => void }) {
       }
     });
 
-    const unsubPlayers = onSnapshot(db.collection(`rooms/${roomId}/players`) as any, (snap: any) => {
-       // Using simpler nested collection listener via v9 SDK requires collection() but let's just do it cleanly
-    });
-    // Wait, firebase v9 syntax:
     return () => { unsubRoom(); };
   }, [inRoom, roomId]);
   
