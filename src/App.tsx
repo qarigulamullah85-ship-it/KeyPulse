@@ -9,6 +9,10 @@ import { Dashboard } from './components/Dashboard';
 import { TypingView } from './components/TypingView';
 import { TypingGame } from './components/TypingGame';
 import { LessonCreator } from './components/LessonCreator';
+import { StatsView } from './components/StatsView';
+import { LeaderboardView } from './components/LeaderboardView';
+import { MultiplayerView } from './components/MultiplayerView';
+import { WhatsAppButton } from './components/WhatsAppButton';
 import { Lesson, UserStats, LessonResult } from './types';
 import { loadProgress, saveProgress, COURSES } from './data';
 import { auth, db } from './lib/firebase';
@@ -18,7 +22,7 @@ import { LanguageContext, dictionary } from './i18n';
 
 import { ThemeProvider } from './ThemeContext';
 
-type ViewState = 'landing' | 'dashboard' | 'typing' | 'create';
+type ViewState = 'landing' | 'dashboard' | 'typing' | 'create' | 'stats' | 'leaderboard' | 'multiplayer' | 'certificate';
 
 export default function App() {
   const [view, setView] = useState<ViewState>('landing');
@@ -75,7 +79,7 @@ export default function App() {
     // Only save custom lessons to local storage, not stats (guests start fresh)
     saveProgress({ customLessons });
     if (user) {
-      setDoc(doc(db, 'users', user.uid), stats, { merge: true }).catch(err => {
+      setDoc(doc(db, 'users', user.uid), { ...stats, displayName: user.displayName }, { merge: true }).catch(err => {
         console.error("Error saving to firestore", err);
       });
     }
@@ -120,6 +124,7 @@ export default function App() {
               setView('typing');
             }}
             onCreateCustom={() => setView('create')}
+            changeView={setView as any}
           />
         )}
 
@@ -163,6 +168,15 @@ export default function App() {
           />
         )}
 
+        {view === 'stats' && (
+          <StatsView stats={stats} onBack={() => setView('dashboard')} />
+        )}
+        {view === 'leaderboard' && (
+          <LeaderboardView onBack={() => setView('dashboard')} />
+        )}
+        {view === 'multiplayer' && (
+          <MultiplayerView onBack={() => setView('dashboard')} />
+        )}
         {view === 'create' && (
           <LessonCreator 
             onSave={lesson => {
@@ -172,6 +186,8 @@ export default function App() {
             onCancel={() => setView('dashboard')}
           />
         )}
+        
+        <WhatsAppButton />
       </div>
     </LanguageContext.Provider>
     </ThemeProvider>

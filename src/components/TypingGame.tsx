@@ -225,11 +225,11 @@ export function TypingGame({ lesson, onComplete, onBack, onNext }: TypingGamePro
           {words.map(w => (
             <motion.div
               key={w.id}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1, y: `${w.y}vh`, x: `${w.x}vw` }}
+              initial={{ opacity: 0, scale: 0.5, x: "-50%" }}
+              animate={{ opacity: 1, scale: 1, x: "-50%" }}
               exit={{ opacity: 0, scale: 1.5 }}
               transition={{ type: 'tween', duration: 0 }} // Duration 0 because we handle animation loop
-              className={`absolute top-0 left-0 text-2xl font-mono font-bold whitespace-pre transform -translate-x-1/2 flex flex-col items-center justify-center ${lesson.gameType === 'balloon' ? '' : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2 rounded-lg shadow-md dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] border border-slate-200 dark:border-transparent'}`}
+              className={`absolute text-2xl font-mono font-bold whitespace-pre flex flex-col items-center justify-center ${lesson.gameType === 'balloon' ? '' : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-2 rounded-lg shadow-md dark:shadow-[0_4px_12px_rgba(255,255,255,0.2)] border border-slate-200 dark:border-transparent'}`}
               style={{ top: `${w.y}%`, left: `${w.x}%` }}
             >
               {lesson.gameType === 'balloon' && (

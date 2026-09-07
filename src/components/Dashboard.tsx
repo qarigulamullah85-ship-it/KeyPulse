@@ -14,6 +14,7 @@ interface DashboardProps {
   onSelectLesson: (lesson: Lesson) => void;
   customLessons: Lesson[];
   onCreateCustom: () => void;
+  changeView?: (view: string) => void;
 }
 
 const getLessonIcon = (id: number, isGame: boolean) => {
@@ -36,7 +37,7 @@ const getLessonIcon = (id: number, isGame: boolean) => {
   );
 };
 
-export function Dashboard({ stats, onSelectLesson, customLessons }: DashboardProps) {
+export function Dashboard({ stats, onSelectLesson, customLessons, onCreateCustom, changeView }: DashboardProps) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [unlockConfirmLesson, setUnlockConfirmLesson] = useState<Lesson | null>(null);
   const { language, setLanguage } = useLanguage();
@@ -80,13 +81,24 @@ export function Dashboard({ stats, onSelectLesson, customLessons }: DashboardPro
             KeyPulse
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-300">
-            <button className="text-white">Home</button>
-            <button className="hover:text-white transition-colors">Stats</button>
-            <button className="hover:text-white transition-colors">Badges</button>
+            <button className="text-white" onClick={() => changeView?.('dashboard')}>Home</button>
+            <button className="hover:text-white transition-colors" onClick={() => changeView?.('stats')}>Stats & Charts</button>
+            <button className="hover:text-white transition-colors" onClick={() => changeView?.('leaderboard')}>Leaderboard</button><button className="hover:text-white transition-colors" onClick={() => changeView?.('multiplayer')}>Multiplayer</button><button className="hover:text-white transition-colors" onClick={onCreateCustom}>Custom Test</button>
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-sm font-medium">
+          <button 
+            className="text-slate-300 hover:text-white transition-colors"
+            onClick={() => {
+              const current = localStorage.getItem("soundsEnabled") !== "false";
+              localStorage.setItem("soundsEnabled", String(!current));
+              setLanguage(language);
+            }}
+            title="Toggle Typing Sounds"
+          >
+            {localStorage.getItem("soundsEnabled") !== "false" ? "🔊" : "🔇"}
+          </button>
           <select 
             className="bg-transparent text-slate-300 outline-none cursor-pointer hover:text-white appearance-none pr-5 font-semibold"
             value={language}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { playTypeSound } from '../lib/audio';
 
 export function useTyping(text: string, onFinish: (wpm: number, accuracy: number, durationSec: number, score: number) => void, onKeyPress?: (isCorrect: boolean) => void) {
   const [cursorIndex, setCursorIndex] = useState(0);
@@ -27,6 +28,7 @@ export function useTyping(text: string, onFinish: (wpm: number, accuracy: number
         setStartTime(Date.now());
         setCursorIndex(1);
         setLastMistakeIndex(null);
+        if (localStorage.getItem('soundsEnabled') !== 'false') playTypeSound(true);
         onKeyPress?.(true);
         if (text.length === 1) {
           setStatus('finished');
@@ -35,6 +37,7 @@ export function useTyping(text: string, onFinish: (wpm: number, accuracy: number
       } else {
         setMistakes(prev => prev + 1);
         setLastMistakeIndex(0);
+        if (localStorage.getItem('soundsEnabled') !== 'false') playTypeSound(false);
         onKeyPress?.(false);
       }
       return;
@@ -43,6 +46,7 @@ export function useTyping(text: string, onFinish: (wpm: number, accuracy: number
     if (e.key === expectedChar) {
       setCursorIndex(prev => prev + 1);
       setLastMistakeIndex(null);
+      if (localStorage.getItem('soundsEnabled') !== 'false') playTypeSound(true);
       onKeyPress?.(true);
       // Check if finished
       if (cursorIndex + 1 === text.length) {
@@ -66,6 +70,7 @@ export function useTyping(text: string, onFinish: (wpm: number, accuracy: number
     } else {
       setMistakes(prev => prev + 1);
       setLastMistakeIndex(cursorIndex);
+      if (localStorage.getItem('soundsEnabled') !== 'false') playTypeSound(false);
       onKeyPress?.(false);
     }
   }, [cursorIndex, status, text, startTime, mistakes, onFinish, onKeyPress]);
