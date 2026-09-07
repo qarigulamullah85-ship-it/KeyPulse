@@ -8,6 +8,9 @@ import { Landing } from './components/Landing';
 import { Dashboard } from './components/Dashboard';
 import { TypingView } from './components/TypingView';
 import { TypingGame } from './components/TypingGame';
+import { TypingBombGame } from './components/TypingBombGame';
+import { TypingPuzzleGame } from './components/TypingPuzzleGame';
+import { KidsTypingGame } from './components/KidsTypingGame';
 import { LessonCreator } from './components/LessonCreator';
 import { StatsView } from './components/StatsView';
 import { LeaderboardView } from './components/LeaderboardView';
@@ -148,8 +151,65 @@ export default function App() {
             }}
           />
         )}
-        {view === 'typing' && activeLesson && activeLesson.gameType && (
+        {view === 'typing' && activeLesson && (activeLesson.gameType === 'falling-words' || activeLesson.gameType === 'balloon') && (
           <TypingGame 
+            lesson={activeLesson}
+            onComplete={handleLessonComplete}
+            onBack={() => {
+              setActiveLesson(null);
+              setView('dashboard');
+            }}
+            onNext={() => {
+              const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
+              if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
+                setActiveLesson(COURSES[currentIndex + 1]);
+              } else {
+                setActiveLesson(null);
+                setView('dashboard');
+              }
+            }}
+          />
+        )}
+        {view === 'typing' && activeLesson && activeLesson.gameType === 'bomb' && (
+          <TypingBombGame 
+            lesson={activeLesson}
+            onComplete={handleLessonComplete}
+            onBack={() => {
+              setActiveLesson(null);
+              setView('dashboard');
+            }}
+            onNext={() => {
+              const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
+              if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
+                setActiveLesson(COURSES[currentIndex + 1]);
+              } else {
+                setActiveLesson(null);
+                setView('dashboard');
+              }
+            }}
+          />
+        )}
+        {view === 'typing' && activeLesson && activeLesson.gameType === 'puzzle' && (
+          <TypingPuzzleGame 
+            lesson={activeLesson}
+            onComplete={handleLessonComplete}
+            onBack={() => {
+              setActiveLesson(null);
+              setView('dashboard');
+            }}
+            onNext={() => {
+              const currentIndex = COURSES.findIndex(l => l.id === activeLesson.id);
+              if (currentIndex >= 0 && currentIndex < COURSES.length - 1) {
+                setActiveLesson(COURSES[currentIndex + 1]);
+              } else {
+                setActiveLesson(null);
+                setView('dashboard');
+              }
+            }}
+          />
+        )}
+        {view === 'typing' && activeLesson && activeLesson.gameType === 'kids' && (
+          <KidsTypingGame 
             lesson={activeLesson}
             onComplete={handleLessonComplete}
             onBack={() => {

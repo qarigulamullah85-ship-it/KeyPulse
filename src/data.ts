@@ -26,7 +26,10 @@ const earlyLessons = [
   { title: "Keys v & m", content: "v m v m vv mm vm mv fv jm dv km sv lm av ;m" },
   { title: "Keys b & n", content: "b n b n bb nn bn nb fb jn db kn sb ln ab ;n" },
   { title: "Keys z & x", content: "z x z x zz xx zx xz az sx dz fx as zx df cx" },
-  { title: "All Letters", content: "the quick brown fox jumps over the lazy dog" }
+  { title: "All Letters", content: "the quick brown fox jumps over the lazy dog" },
+  { title: "Typing Bomb Game", content: "explode blast boom fire fast typing speed danger blast warning hurry", gameType: "bomb" },
+  { title: "Kids Typing Game", content: "cat dog cow pig fox bat ant bug bee fly sun moon star tree leaf", gameType: "kids" },
+  { title: "Typing Puzzle Game", content: "puzzle secret enigma riddle mystery unlock decode unscramble magic hidden", gameType: "puzzle" }
 ];
 
 // Most common English words for practice
